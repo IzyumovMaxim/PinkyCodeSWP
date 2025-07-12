@@ -21,25 +21,16 @@ def get_start_page(user_id):
     return 'admin.html' if is_admin(user_id) else 'index.html'
 
 # Connect using DATABASE_URL from Render
+import os
+import psycopg2
+
 def get_db_connection():
-    url = os.environ.get('DATABASE_URL')
-    if url:
-        from urllib.parse import urlparse
-        parsed = urlparse(url)
-        return psycopg2.connect(
-            dbname=parsed.path.lstrip('/'),
-            user=parsed.username,
-            password=parsed.password,
-            host=parsed.hostname,
-            port=parsed.port
-        )
-    # fallback to env vars
     return psycopg2.connect(
-        dbname=os.environ.get('PGDATABASE','pinky'),
-        user=os.environ.get('PGUSER','pinky'),
-        password=os.environ.get('PGPASS'),
-        host=os.environ.get('PGHOST','localhost'),
-        port=os.environ.get('PGPORT','5432')
+        host=os.environ.get('PGHOST', 'localhost'),
+        database=os.environ.get('PGDATABASE', 'pinky'),
+        user=os.environ.get('PGUSER', 'postgres'),
+        password=os.environ.get('PGPASSWORD', ''),
+        port=os.environ.get('PGPORT', '5432')
     )
 
 conn = get_db_connection()
