@@ -9,3 +9,6 @@ pytest>=7.0
 pytest-cov>=4.0.0
 torch
 transformers
+psycopg2
+agent
+gunicorn
