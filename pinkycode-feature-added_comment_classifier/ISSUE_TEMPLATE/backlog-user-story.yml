@@ -1,0 +1,38 @@
+name: Backlog | User Story
+description: Add a user story to the Backlog column.
+title: "[BACKLOG][STORY] "
+labels: ["backlog","user-story"]
+body:
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      options: [frontend, ML, backend]
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Story Summary
+      placeholder: "As a ____, I want ____, so that ____."
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Detailed Description
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria (GIVEN / WHEN / THEN)
+      placeholder: |
+        **GIVEN** …  
+        **WHEN** …  
+        **THEN** …
+    validations:
+      required: true

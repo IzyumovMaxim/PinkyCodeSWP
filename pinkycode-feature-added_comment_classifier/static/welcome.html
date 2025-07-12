@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PinkyCode Login</title>
+  <script>
+    if (window.location.href !== "https://pinkycode.mooo.com/") {
+      window.location.href = "https://pinkycode.mooo.com";
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-pink: #FEA8C1;
+      --color-green-light: #e6f4ea;
+      --color-gray-light: #f2f2f2;
+      --color-gray: #777;
+      --color-text: #333;
+      --color-green: #29D526;
+      --spacing: 16px;
+      --header-height: 60px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-image: url('../img/bg_1.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      font-family: 'Poppins', sans-serif;
+      color: var(--color-text);
+      height: 100vh;
+    }
+
+    header {
+      background: var(--color-pink);
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--spacing);
+      border-bottom: 1px solid #ccc;
+    }
+
+    header .logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: calc(100vh - var(--header-height));
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+      max-width: 600px;
+    }
+
+    .highlight {
+      color: #e75480;
+      font-weight: 700;
+    }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-top: 0.5rem;
+    }
+
+    .button {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .button p {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    button {
+      background-color: #FFC4D5;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #f8a8bc;
+      transform: translateY(-2px);
+    }
+
+    button span {
+      color: green;
+      font-weight: bold;
+    }
+
+    .color {
+      color: #ffffff;
+      background-color: rgb(255, 255, 255);
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PinkyCode</div>
+  <div id="themeToggle" style="cursor:pointer; font-size:1.5rem;" title="Switch theme">✈️
+  </div>
+</header>
+
+<div class="container">
+  <div class="title">
+    <span class="highlight">PinkyCode</span> is a special tool to help teachers ease the process of code comments assessment.
+  </div>
+
+  <p>This tool uses LLM to identify problematic parts of comments.<br>Interested?</p>
+
+  <div class="button">
+    <p>Tap to log in</p>
+    <button onclick="window.location.href='https://pinkycode.mooo.com?login=1'">
+      <span>Log in</span>
+    </button>
+  </div>
+</div>
+<script>
+  // Theme toggle logic shared across all pages
+  const map = {
+    'welcome.html':      'welcome_blue.html',
+    'welcome_blue.html': 'welcome.html',
+    'login.html':        'login_blue.html',
+    'login_blue.html':   'login.html',
+    'admin.html':        'admin_blue.html',
+    'admin_blue.html':   'admin.html',
+    'index.html':        'index_blue.html',
+    'index_blue.html':   'index.html'
+  };
+  const current = window.location.pathname.split('/').pop();
+  document.getElementById('themeToggle').onclick = () => {
+    const next = map[current] || current;
+    localStorage.setItem('theme', next.includes('_blue') ? 'blue' : 'default');
+    window.location.href = next;
+  };
+  const stored = localStorage.getItem('theme');
+  if (stored) {
+    const isBlue = current.includes('_blue');
+    if ((stored==='blue' && !isBlue) || (stored==='default' && isBlue)) {
+      const target = map[current];
+      if (target) window.location.replace(target);
+    }
+  }
+</script>
+
+</body>
+</html>

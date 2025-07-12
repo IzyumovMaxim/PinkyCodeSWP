@@ -1,0 +1,19 @@
+@startuml
+actor User
+participant "Frontend" as FE
+participant "Backend" as BE
+participant "ML Engine" as ML
+participant "LLM API" as LLM
+database "Database" as DB
+
+User -> FE: Upload ZIP file
+FE -> BE: POST /upload
+BE -> BE: Unzip and parse files
+BE -> ML: Send parsed files
+ML -> LLM: Prompt + analyze code
+LLM --> ML: Analysis result
+ML --> BE: Return analysis metrics
+BE -> DB: Store results
+BE --> FE: Return summary table
+FE --> User: Display results
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+skinparam componentStyle uml2
+
+package "PinkyCode System" {
+  component Frontend
+  component Backend
+  component ML
+  component Database
+  component Storage
+  component LLM
+  
+  Backend -() "Upload API"
+  ML -() "Analysis API"
+  Database -() "Data Storage"
+  Storage -() "File Storage"
+  LLM -() "LLM API"
+  
+  Frontend --( "Upload API"
+  Backend --( "Analysis API"
+  Backend --( "Data Storage"
+  Backend --( "File Storage"
+  ML --( "LLM API"
+}
+
+@enduml

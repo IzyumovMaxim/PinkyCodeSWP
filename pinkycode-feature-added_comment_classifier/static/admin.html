@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PinkyCode Admin</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    :root {
+      --color-pink: #FEA8C1;
+      --color-pink-dark: #e6a5b3;
+      --color-green-light: #D4F1E0;
+      --color-gray-light: #f2f2f2;
+      --color-gray: #777;
+      --color-text: #333;
+      --spacing: 16px;
+      --header-height: 60px;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      color: var(--color-text);
+      background: #fff;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--color-pink);
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--spacing);
+      border-bottom: 1px solid #ccc;
+    }
+
+    .logo-button {
+      font-weight: bold;
+      background: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      font-size: 18px;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: #fff;
+      border-right: 1px solid #aaa;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .profile-card {
+      background: var(--color-green-light);
+      border: 1px solid #333;
+      border-radius: 20px;
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-card label {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px;
+    }
+
+    .profile-card input {
+      width: 100%;
+      height: 36px;
+      margin: 6px 0;
+      border: 1px solid #333;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .ta-actions p {
+      font-size: 18px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+
+    .start-button {
+      width: 100%;
+      height: 50px;
+      background: #f9cbd7;
+      border: 1px solid #333;
+      border-radius: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #FFFFFF;
+      margin-top: 20px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 40px;
+      background: #FFFFFF;
+      overflow-y: auto;
+    }
+
+    .content.hidden {
+      display: none;
+    }
+
+    .add-ta-form {
+      display: none;
+      padding: 40px;
+      flex: 1;
+      background: #FFFFFF;
+    }
+
+    .add-ta-form.active {
+      display: block;
+    }
+
+    .add-ta-form h1 {
+      font-size: 32px;
+      color: #FFC4D5;
+      text-shadow: 1px 1px #000;
+      margin-bottom: 20px;
+    }
+
+    .add-ta-form input {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+
+    .add-ta-form button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background-color: #FEA8C1;
+      color: white;
+      cursor: pointer;
+    }
+
+    .add-ta-form .success-message {
+      margin-top: 20px;
+      color: green;
+      font-weight: bold;
+    }
+
+    .content h1 {
+      font-size: 32px;
+      color: #FFC4D5;
+      text-shadow: 1px 1px #000;
+      margin-bottom: 20px;
+    }
+
+    .content p.description {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.6;
+    }
+
+    .content h2 {
+      font-size: 28px;
+      color: #FFC4D5;
+      text-shadow: 1px 1px #000;
+      margin-top: 40px;
+    }
+
+    .history {
+      width: 300px;
+      flex-shrink: 0;
+      background: #fff;
+      border-left: 1px solid #aaa;
+      padding: 20px;
+    }
+
+    .history h3 {
+      font-size: 24px;
+      color: #FFC4D5;
+      text-shadow: 1px 1px #000;
+      margin-bottom: 20px;
+    }
+
+    .history button {
+      width: 100%;
+      height: 40px;
+      background: #FFC4D5;
+      border: 1px solid #999;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar, .history {
+        display: none;
+      }
+      .content, .add-ta-form {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <button class="logo-button">PinkyCode</button>
+    </header>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="profile-card">
+          <div class="avatar">
+            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+              <circle cx="32" cy="32" r="30" fill="#ffe6ec" />
+              <circle cx="32" cy="24" r="12" fill="#fba3bc" />
+              <path d="M16 52c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="#fba3bc" />
+            </svg>
+          </div>
+          <label>Name</label>
+          <input type="text" value="name" readonly>
+          <label>Surname</label>
+          <input type="text" value="surname" readonly>
+          <label>University email</label>
+          <input type="text" value="email" readonly>
+        </div>
+        <div class="ta-actions">
+          <p onclick="showAddTAForm()">🌸 Add another TA</p>
+          <p>🌸 List of TAs</p>
+        </div>
+        <button class="start-button" onclick="location.href='?index=1'">Tap to start</button>
+      </aside>
+
+      <section class="content" id="mainContent">
+        <h1>Hello!</h1>
+        <p class="description">
+          Here is the admin page.<br>
+          You can view your history, add other TAs and check new assignment as well!<br>
+          If you have any problems, please contact the project’s team
+        </p>
+        <h2>Have a good day!</h2>
+      </section>
+
+      <section class="add-ta-form" id="addTAForm">
+        <h1>Add another TA</h1>
+        <input type="email" id="taEmail" placeholder="University email">
+        <input type="password" id="taPassword" placeholder="Password">
+        <button type="submit" onclick="addTA()">Add TA</button>
+        <div class="success-message" id="successMessage"></div>
+      </section>
+
+      <aside class="history">
+        <h3>History</h3>
+        <button>Course</button>
+      </aside>
+    </div>
+  </div>
+  <script>
+    function showAddTAForm() {
+      document.getElementById('mainContent').classList.add('hidden');
+      document.getElementById('addTAForm').classList.add('active');
+    }
+
+    function addTA() {
+      const emailInput = document.getElementById('taEmail');
+      const passwordInput = document.getElementById('taPassword');
+      const successMessage = document.getElementById('successMessage');
+
+      if (emailInput.value && passwordInput.value) {
+        successMessage.textContent = 'TA is successfully added!';
+
+        emailInput.value = '';
+        passwordInput.value = '';
+      } else {
+        successMessage.textContent = 'Please fill in all fields.';
+        successMessage.style.color = 'red';
+      }
+    }
+  </script>
+</body>
+</html>

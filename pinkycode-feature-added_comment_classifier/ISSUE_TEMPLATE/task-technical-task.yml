@@ -1,0 +1,33 @@
+name: Task | Technical Task
+description: Execute a technical task in the Task column.
+title: "[TASK][TASK] "
+labels: ["task","task-detail"]
+body:
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      options: [frontend, ML, backend]
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Task Summary
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Details
+    validations:
+      required: true
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: Subtasks / Child Issues
+    validations:
+      required: true

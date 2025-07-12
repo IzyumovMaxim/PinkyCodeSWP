@@ -1,0 +1,1239 @@
+import java.util.Scanner;
+import java.util.HashMap;
+
+import java.lang.reflect.Method;
+
+
+public class SmartHomeManagementSystem {
+
+    private static Light[] lights       = new Light[Light.getNumberOfDevices()];
+    private static Camera[] cameras     = new Camera[Camera.getNumberOfDevices()];
+    private static Heater[] heaters     = new Heater[Heater.getNumberOfDevices()];
+
+    private static final int CAMERA_INITIAL_ANGLE       = 45;
+    private static final int HEATER_INITIAL_TEMPERATURE = 20;
+
+    private static HashMap<String, Command>       commands       = new HashMap<>();
+    private static HashMap<String, SmartDevice[]> devicesGrouped = new HashMap<>();
+
+    public static void main(String[] args) {
+        addLights(Status.ON, false, BrightnessLevel.LOW, LightColor.YELLOW);
+        addCameras(Status.ON, false, false, CAMERA_INITIAL_ANGLE);
+        addHeaters(Status.ON, HEATER_INITIAL_TEMPERATURE);
+
+        addDeviceGroups();
+        addCommands();
+
+        executeCommands();
+    }
+
+    /**
+     * This method represents the main body for fetching commands and invoking their execution
+     */
+    public static void executeCommands() {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            String commandLine = scanner.nextLine();
+
+            if (commandLine.equals("end")) {
+                break;
+            }
+
+            /* Splitting the command into tokens (<commandName> <param1> ...) */
+            String[] commandTokens = commandLine.split(" ");
+            Command  command       = commands.get(commandTokens[0]);          // Fetching command name
+
+            if (command == null) {
+                /* Command does not exists */
+                System.out.println("Invalid command");
+
+            } else {
+                /* Here happends check of command's vailidity and execution in the best case */
+                command.execute(commandLine, devicesGrouped);
+            }
+        }
+
+        scanner.close();
+
+    }
+
+    public static void addLights(Status status, boolean charging,
+                                 BrightnessLevel brightnessLevel, LightColor lightColor) {
+
+        for (int i = 0; i < lights.length; i++) {
+            lights[i] = new Light(status, charging, brightnessLevel, lightColor);
+            lights[i].setDeviceId(i + 0);                                             // deviceId ranges from 0 to 3
+        }
+    }
+
+    public static void addCameras(Status status, boolean charging, boolean recording, int angle) {
+
+        for (int i = 0; i < cameras.length; i++) {
+            cameras[i] = new Camera(status, charging, recording, angle);
+            cameras[i].setDeviceId(i + Light.getNumberOfDevices());                   // deviceId ranges from 4 to 5
+        }
+
+    }
+
+    public static void addHeaters(Status status, int temperature) {
+
+        for (int i = 0; i < heaters.length; i++) {
+            heaters[i] = new Heater(status, temperature);
+            heaters[i].setDeviceId(i + Light.getNumberOfDevices()
+                                     + Camera.getNumberOfDevices());                  // deviceId ranges from 6 to 9
+        }
+
+    }
+
+    public static void addDeviceGroups() {
+        devicesGrouped.put("Light", lights);
+        devicesGrouped.put("Camera", cameras);
+        devicesGrouped.put("Heater", heaters);
+    }
+
+    public static void addCommands() {
+        commands.put("DisplayAllStatus", new DisplayAllStatus());
+        commands.put("TurnOn", new TurnOn());
+        commands.put("TurnOff", new TurnOff());
+        commands.put("StartCharging", new StartCharging());
+        commands.put("StopCharging", new StopCharging());
+        commands.put("SetTemperature", new SetTemperature());
+        commands.put("SetBrightness", new SetBrightness());
+        commands.put("SetColor", new SetColor());
+        commands.put("SetAngle", new SetAngle());
+        commands.put("StartRecording", new StartRecording());
+        commands.put("StopRecording", new StopRecording());
+    }
+
+}
+
+enum Status {
+    OFF,
+    ON
+}
+
+
+enum LightColor {
+    WHITE,
+    YELLOW
+}
+
+
+enum BrightnessLevel {
+    HIGH,
+    MEDIUM,
+    LOW
+}
+
+
+interface Controllable {
+    boolean turnOff();
+    boolean turnOn();
+    boolean isOn();
+}
+
+
+interface Chargeable {
+    boolean isCharging();
+    boolean startCharging();
+    boolean stopCharging();
+}
+
+
+abstract class SmartDevice implements Controllable {
+    private Status status;
+    private int    deviceId;
+
+    private static int numberOfDevices;
+
+    public SmartDevice(Status status) {
+        this.status = status;
+    }
+
+    public abstract String displayStatus();
+
+    public int getDeviceId() {
+        return this.deviceId;
+    }
+
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public Status getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public boolean turnOff() {
+        if (!this.isOn()) {
+            return false;
+        }
+
+        this.status = Status.OFF;
+        return true;
+    }
+
+    public boolean turnOn() {
+        if (this.isOn()) {
+            return false;
+        }
+
+        this.status = Status.ON;
+        return true;
+    }
+
+    public boolean isOn() {
+        return this.status.equals(Status.ON);
+    }
+
+    public boolean checkStatusAccess() {
+        if (!this.isOn()) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+class Heater extends SmartDevice {
+    private int temperature;
+
+    static final int MAX_HEATER_TEMP = 30;
+    static final int MIN_HEATER_TEMP = 15;
+
+    private static int numberOfDevices = 2 * 2;             // To avoid magic number warning
+
+    public Heater(Status status, int temperature) {
+        super(status);
+
+        this.temperature = temperature;
+    }
+
+    public int getTemperature() {
+        return this.temperature;
+    }
+
+    public boolean setTemperature(int temperature) {
+        if ((temperature < MIN_HEATER_TEMP) || (temperature > MAX_HEATER_TEMP)) {
+            return false;
+        }
+
+        this.temperature = temperature;
+        return true;
+    }
+
+    public static int getNumberOfDevices() {
+        return Heater.numberOfDevices;
+    }
+
+    public String displayStatus() {
+        return "Heater " + this.getDeviceId() + " is " + this.getStatus()
+             + " and the temperature is " + this.getTemperature();
+    }
+}
+
+
+class Camera extends SmartDevice implements Chargeable {
+    static final int MAX_CAMERA_ANGLE = 60;
+    static final int MIN_CAMERA_ANGLE = -60;
+
+    private boolean charging;
+    private boolean recording;
+    private int     angle;
+
+    private static int numberOfDevices = 2;
+
+    public Camera(Status status, boolean charging, boolean recording, int angle) {
+        super(status);
+
+        this.charging  = charging;
+        this.recording = recording;
+        this.angle     = angle;
+    }
+
+    public int getAngle() {
+        return this.angle;
+    }
+
+    public boolean setCameraAngle(int angle) {
+        if ((angle < MIN_CAMERA_ANGLE) || (angle > MAX_CAMERA_ANGLE)) {
+            return false;
+        }
+
+        this.angle = angle;
+        return true;
+    }
+
+    public boolean startRecording() {
+        if (this.isRecording()) {
+            return false;
+        }
+
+        this.recording = true;
+        return true;
+    }
+
+    public boolean stopRecording() {
+        if (!this.isRecording()) {
+            return false;
+        }
+
+        this.recording = false;
+        return true;
+    }
+
+    public boolean isRecording() {
+        return this.recording;
+    }
+
+    public boolean isCharging() {
+        return this.charging;
+    }
+
+    public boolean startCharging() {
+        if (this.isCharging()) {
+            return false;
+        }
+
+        this.charging = true;
+        return true;
+    }
+
+    public boolean stopCharging() {
+        if (!this.isCharging()) {
+            return false;
+        }
+
+        this.charging = false;
+        return true;
+    }
+
+    public static int getNumberOfDevices() {
+        return Camera.numberOfDevices;
+    }
+
+    public String displayStatus() {
+        return "Camera " + this.getDeviceId() + " is " + this.getStatus()
+             + ", the angle is " + this.getAngle() + ", the charging status is " + this.isCharging()
+             + ", and the recording status is " + this.isRecording();
+    }
+}
+
+
+class Light extends SmartDevice implements Chargeable {
+    private boolean         charging;
+    private BrightnessLevel brightnessLevel;
+    private LightColor      lightColor;
+
+    private static int numberOfDevices = 2 * 2;                      // To avoid magic number warning
+
+    public Light(Status status, boolean charging, BrightnessLevel brightnessLevel, LightColor lightColor) {
+        super(status);
+
+        this.charging        = charging;
+        this.brightnessLevel = brightnessLevel;
+        this.lightColor      = lightColor;
+    }
+
+    public LightColor getLightColor() {
+        return this.lightColor;
+    }
+
+    public void setLightColor(LightColor lightColor) {
+        this.lightColor = lightColor;
+    }
+
+    public BrightnessLevel getBrightnessLevel() {
+        return this.brightnessLevel;
+    }
+
+    public void setBrightnessLevel(BrightnessLevel brightnessLevel) {
+        this.brightnessLevel = brightnessLevel;
+    }
+
+    public boolean isCharging() {
+        return this.charging;
+    }
+
+    public boolean startCharging() {
+        if (this.isCharging()) {
+            return false;
+        }
+
+        this.charging = true;
+        return true;
+    }
+
+    public boolean stopCharging() {
+        if (!this.isCharging()) {
+            return false;
+        }
+
+        this.charging = false;
+        return true;
+    }
+
+    public static int getNumberOfDevices() {
+        return Light.numberOfDevices;
+    }
+
+    public String displayStatus() {
+        return "Light " + this.getDeviceId() + " is " + this.getStatus()
+             + ", the color is " + this.getLightColor() + ", the charging status is " + this.isCharging()
+             + ", and the brightness level is " + this.getBrightnessLevel();
+    }
+}
+
+/**
+ * This is an abstract class from which are inherited all Command Classes.
+ */
+abstract class Command {
+    private static final int ARG_NUMBER = 0;       // Each command has its corresponding expected number of arguments
+
+    /**
+     * This method checks if the number of arguments correspnds with the expected number of arguments
+     *
+     * @param commandLine This is string that represents a separate command line
+     * @param devicesGroups This is HashMap, which stores device names as keys
+     *                      and the groups of corresponding devices as values
+     *
+     * @return True or False
+     */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        String[] commandTokens = commandLine.split(" ");              // Splitting into command's name and its arguments
+
+        if (getNumberOfArguments() != (commandTokens.length - 1)) {
+            /* If the number of the arguments of the command is incorrect */
+            System.out.println("Invalid command");
+            return false;
+        }
+
+        return true;
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+
+    /**
+     * This method should execute the corresponding command if it has correct structure and correct arguments
+     *
+     * @param commandLine This is string that represents a separate command line
+     * @param devicesGroups This is HashMap, which stores device names as keys
+     *                      and the groups of corresponding devices as values
+     */
+    abstract void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups);
+}
+
+
+/**
+ * This is a class from which are inherited all Command Classes of corresponding commands
+ * which have deviceName and deviceId as arguments
+ */
+abstract class CommandTowardsDevice extends Command {
+    private static final int ARG_NUMBER = 2;
+
+    /* 'deviceIndexInArray' represents the index of the device in the corresponding group rather than device's id */
+    private String deviceNameAttr;
+    private int deviceIndexInArray;
+
+    /**
+     * This method additionally checks if device actually exists and
+     * if device id which is expected to be an integer is actually an integer
+     */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        if (!this.isDeviceIdInteger(commandLine, devicesGroups)) {
+            System.out.println("Invalid command");
+            return false;
+        }
+
+        determineDeviceIfExists(commandLine, devicesGroups);
+
+        if (this.getDeviceName().equals("") || this.getDeviceIndexInArray() == -1) {
+            System.out.println("The smart device was not found");
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean isDeviceIdInteger(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        String[] commandTokens = commandLine.split(" ");
+
+        String   deviceIdStr   = commandTokens[2];
+
+        try {
+            /* Non-integer device id is determined by catching an exception */
+            Integer.parseInt(deviceIdStr);
+        } catch (NumberFormatException exc) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void determineDeviceIfExists(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        String[]      commandTokens = commandLine.split(" ");
+
+        String        deviceName    = commandTokens[1];
+        int           deviceId      = Integer.parseInt(commandTokens[2]);
+
+        SmartDevice[] deviceGroup;
+
+        /* Default values for these attributes, if they stay the same,
+         * then the correspodning smart device does not exist*/
+        this.deviceNameAttr     = "";
+        this.deviceIndexInArray = -1;
+
+        if (!devicesGroups.containsKey(deviceName)) {
+            return;                 // Device name does not exist
+        }
+
+        this.deviceNameAttr = deviceName;
+
+        switch (this.deviceNameAttr) {
+            case "Camera":
+                deviceGroup = (Camera[]) devicesGroups.get(this.deviceNameAttr);
+                break;
+            case "Heater":
+                deviceGroup = (Heater[]) devicesGroups.get(this.deviceNameAttr);
+                break;
+
+            default:
+                deviceGroup = (Light[]) devicesGroups.get(this.deviceNameAttr);
+                break;
+        }
+
+        /* Check if device id belongs to the device of corresponding group */
+        if ((deviceGroup[0].getDeviceId() <= deviceId)
+                && (deviceId <= deviceGroup[deviceGroup.length - 1].getDeviceId())) {
+
+            this.deviceIndexInArray = deviceId - deviceGroup[0].getDeviceId();
+        }
+    }
+
+    public String getDeviceName() {
+        return this.deviceNameAttr;
+    }
+
+    public int getDeviceIndexInArray() {
+        return this.deviceIndexInArray;
+    }
+
+}
+
+
+/**
+ * This is a class from which are inherited all Command Classes of corresponding commands,
+ * which have deviceName and deviceId as arguments
+ */
+abstract class CommandWithIntegerArgument extends CommandTowardsDevice {
+    private static final int ARG_NUMBER = 3;
+
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        if (!this.isIntegerArgumentValid(commandLine)) {
+            System.out.println("Invalid command");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method additionally checks if all arguments that are expected to be integers are actually represent integers
+     */
+    public boolean isIntegerArgumentValid(String commandLine) {
+        String[] commandTokens      = commandLine.split(" ");
+        String   integerArgumentStr = commandTokens[commandTokens.length - 1];
+
+        try {
+            /* Non-integer is determined by catching an exception */
+            Integer.parseInt(integerArgumentStr);
+
+        } catch (NumberFormatException exc) {
+            return false;
+        }
+
+        return true;
+
+    }
+}
+
+
+/**
+ * This is a class from which are inherited all Command Classes of corresponding commands,
+ * which are changing some attribute of the corresponding device
+ */
+abstract class AttributeChangingRelatedCommand extends CommandTowardsDevice {
+    /**
+     * This method additionally checks if the device is on for changing an attribute
+     */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        if (!device.checkStatusAccess()) {
+            System.out.println("You can't change the status of the "
+                             + this.getDeviceName() + " " + device.getDeviceId() + " while it is off");
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+/**
+ * This is a class from which are inherited all Command Classes of corresponding commands,
+ * which are changing an integer attribute of the corresponding device
+ */
+abstract class IntegerAttributeChangingRelatedCommand extends CommandWithIntegerArgument {
+    /**
+     * This method additionally checks if the device is on for changing an attribute
+     */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        if (!device.checkStatusAccess()) {
+            System.out.println("You can't change the status of the "
+                             + this.getDeviceName() + " " + device.getDeviceId() + " while it is off");
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+/**
+ * This is a class from which are inherited all Command Classes of corresponding commands,
+ * which are applied to chargeable devices
+ */
+abstract class ChargeRelatedCommand extends CommandTowardsDevice {
+    /**
+     * This method additionally checks if the device is chargeable
+     */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Class<?>[]  interfaces     = device.getClass().getInterfaces();
+        boolean     interfaceFound = false;
+
+        /* Chargeable device is looked for among the implemented interfaces */
+        for (Class<?> classInterface: interfaces) {
+            if (classInterface.getName().equals("Chargeable")) {
+                interfaceFound = true;
+            }
+        }
+
+        if (!interfaceFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not chargeable");
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "DisplayAllStatus"
+ */
+class DisplayAllStatus extends Command {
+    private static final int ARG_NUMBER = 0;
+
+    /**
+     * This method executes "DisplayAllStatus" if it has correct structure
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice[] lights = devicesGroups.get("Light");
+
+        for (SmartDevice light : lights) {
+            System.out.println(light.displayStatus() + ".");
+        }
+
+        SmartDevice[] cameras = devicesGroups.get("Camera");
+
+        for (SmartDevice camera : cameras) {
+            System.out.println(camera.displayStatus() + ".");
+        }
+
+        SmartDevice[] heaters = devicesGroups.get("Heater");
+
+        for (SmartDevice heater : heaters) {
+            System.out.println(heater.displayStatus() + ".");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "TurnOn"
+ */
+class TurnOn extends CommandTowardsDevice {
+    private static final int ARG_NUMBER = 2;
+
+    /**
+     * This method executes "TurnOn" if it has correct structure and arguments
+     * and if the device is not already on
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+        boolean     commandSuccess = device.turnOn();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is on");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is already on");
+        }
+
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "TurnOff"
+ */
+class TurnOff extends CommandTowardsDevice {
+    private static final int ARG_NUMBER = 2;
+
+    /**
+     * This method executes "TurnOff" if it has correct structure and arguments
+     * and if the device is not already off
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+        boolean     commandSuccess = device.turnOff();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is off");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is already off");
+        }
+
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "StartCharging"
+ */
+class StartCharging extends ChargeRelatedCommand {
+    private static final int ARG_NUMBER = 2;
+
+    /**
+     * This method executes "StartCharging" if it has correct structure and arguments
+     * and if the device is not already charging
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device          = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+        Chargeable  chargableDevice = (Chargeable) device;
+
+        boolean     commandSuccess  = chargableDevice.startCharging();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is charging");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is already charging");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "StopCharging"
+ */
+class StopCharging extends ChargeRelatedCommand {
+    private static final int ARG_NUMBER = 2;
+
+    /**
+     * This method executes "StopCharging" if it has correct structure and arguments
+     * and if the device is charging currently
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device          = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+        Chargeable  chargableDevice = (Chargeable) device;
+        boolean     commandSuccess  = chargableDevice.stopCharging();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " stopped charging");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not charging");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "SetTemperature"
+ */
+class SetTemperature extends IntegerAttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 3;
+
+    /* This method additionally checks if the device is actually a heater
+       by seeking for the method 'setTemperature' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device      = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[]    methods     = device.getClass().getMethods();
+        boolean     methodFound = false;
+
+        for (Method method : methods) {
+            if (method.getName().equals("setTemperature")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a heater");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "SetTemperature" if it has correct structure and arguments,
+     * specifically if the temperature is in correct range
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        String[]    commandTokens  = commandLine.split(" ");
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Heater      heater         = (Heater) device;
+        int         temperature    = Integer.parseInt(commandTokens[commandTokens.length - 1]);
+        boolean     commandSuccess = heater.setTemperature(temperature);
+
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                             + " temperature is set to " + temperature);
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                             + " temperature should be in the range [15, 30]");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+
+}
+
+
+/**
+ * This Command Class implements the execution of the command "SetBrightness"
+ */
+class SetBrightness extends AttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 3;
+
+    /* This method additionally checks if the device is actually a light
+       by seeking for the method 'setBrightnessLevel' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        String[]    commandTokens = commandLine.split(" ");
+
+        SmartDevice device        = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[]    methods       = device.getClass().getMethods();
+        boolean     methodFound   = false;
+
+        for (Method method : methods) {
+            if (method.getName().equals("setBrightnessLevel")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a light");
+            return false;
+        }
+
+        String brightness = commandTokens[commandTokens.length - 1];
+
+        if (!(brightness.equals("LOW")) && !(brightness.equals("MEDIUM")) && !(brightness.equals("HIGH"))) {
+            System.out.println("The brightness can only be one of \"LOW\", \"MEDIUM\", or \"HIGH\"");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "SetBrightness" if it has correct structure and arguments,
+     * specifially if the brightness level is LOW, MEDIUM, or HIGH exactly
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device        = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Light       light         = (Light) device;
+        String[]    commandTokens = commandLine.split(" ");
+
+        String      brightness    = commandTokens[commandTokens.length - 1];
+
+        if (brightness.equals("LOW")) {
+            light.setBrightnessLevel(BrightnessLevel.LOW);
+
+        } else if (brightness.equals("MEDIUM")) {
+            light.setBrightnessLevel(BrightnessLevel.MEDIUM);
+
+        } else {
+            light.setBrightnessLevel(BrightnessLevel.HIGH);
+        }
+
+        System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                         + " brightness level is set to " + brightness);
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "SetColor"
+ */
+class SetColor extends AttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 3;
+
+    /* This method additionally checks if the device is actually a light
+       by seeking for the method 'setLightColor' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        String[] commandTokens = commandLine.split(" ");
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[] methods = device.getClass().getMethods();
+        boolean methodFound = false;
+
+        for (Method method : methods) {
+            if (method.getName().equals("setLightColor")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a light");
+            return false;
+        }
+
+        String color = commandTokens[commandTokens.length - 1];
+
+        if (!(color.equals("YELLOW")) && !(color.equals("WHITE"))) {
+            System.out.println("The light color can only be \"YELLOW\" or \"WHITE\"");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "SetColor" if it has correct structure and arguments,
+     * specifically if the light color is YELLOW or WHITE exactly
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device        = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        String[]    commandTokens = commandLine.split(" ");
+
+        Light       light         = (Light) device;
+        String      color         = commandTokens[commandTokens.length - 1];
+
+        if (color.equals("YELLOW")) {
+            light.setLightColor(LightColor.YELLOW);
+
+        } else if (color.equals("WHITE")) {
+            light.setLightColor(LightColor.WHITE);
+        }
+
+        System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                         + " color is set to " + color);
+
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "SetAngle"
+ */
+class SetAngle extends IntegerAttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 3;
+
+    /* This method additionally checks if the device is actually a camera
+       by seeking for the method 'setCameraAngle' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[] methods = device.getClass().getMethods();
+        boolean methodFound = false;
+
+        for (Method method : methods) {
+
+            if (method.getName().equals("setCameraAngle")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a camera");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "SetAngle" if it has correct structure and arguments,
+     * specifically if the angle is in correct range
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        String[]    commandTokens  = commandLine.split(" ");
+
+        Camera      camera         = (Camera) device;
+        int         angle          = Integer.parseInt(commandTokens[commandTokens.length - 1]);
+        boolean     commandSuccess = camera.setCameraAngle(angle);
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                             + " angle is set to " + angle);
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId()
+                             + " angle should be in the range [-60, 60]");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "StartRecording"
+ */
+class StartRecording extends AttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 2;
+
+    /* This method additionally checks if the device is actually a camera
+       by seeking for the method 'startRecording' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[] methods = device.getClass().getMethods();
+        boolean methodFound = false;
+
+        for (Method method : methods) {
+            if (method.getName().equals("startRecording")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a camera");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "StartRecording" if it has correct structure and arguments,
+     * specifically if the camera is not already recording
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Camera      camera         = (Camera) device;
+        boolean     commandSuccess = camera.startRecording();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " started recording");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is already recording");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}
+
+
+/**
+ * This Command Class implements the execution of the command "StopRecording"
+ */
+class StopRecording extends AttributeChangingRelatedCommand {
+    private static final int ARG_NUMBER = 2;
+
+    /* This method additionally checks if the device is actually a camera
+       by seeking for the method 'stopRecording' */
+    public boolean isValid(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!super.isValid(commandLine, devicesGroups)) {
+            return false;
+        }
+
+        SmartDevice device = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Method[] methods = device.getClass().getMethods();
+        boolean methodFound = false;
+
+        for (Method method : methods) {
+            if (method.getName().equals("stopRecording")) {
+                methodFound = true;
+            }
+        }
+
+        if (!methodFound) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not a camera");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method executes "StartRecording" if it has correct structure and arguments,
+     * specifically if the camera is recording
+     */
+    public void execute(String commandLine, HashMap<String, SmartDevice[]> devicesGroups) {
+        if (!this.isValid(commandLine, devicesGroups)) {
+            return;
+        }
+
+        SmartDevice device         = devicesGroups.get(this.getDeviceName())[this.getDeviceIndexInArray()];
+
+        Camera      camera         = (Camera) device;
+        boolean     commandSuccess = camera.stopRecording();
+
+        if (commandSuccess) {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " stopped recording");
+
+        } else {
+            System.out.println(this.getDeviceName() + " " + device.getDeviceId() + " is not recording");
+        }
+    }
+
+    public int getNumberOfArguments() {
+        return ARG_NUMBER;
+    }
+}

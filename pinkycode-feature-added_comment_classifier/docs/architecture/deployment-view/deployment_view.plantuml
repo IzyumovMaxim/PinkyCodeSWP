@@ -1,0 +1,23 @@
+@startuml
+node "User Browser" {
+  component "Frontend (JS/HTML)"
+}
+
+node "PinkyCode VPS Server" {
+  component "Backend Application"
+  component "ML Engine"
+  database "PostgreSQL DB"
+  folder   "Local File Storage"
+}
+
+cloud "LLM API\n(OpenAI/Groq)" as LLM
+
+"User Browser" --> "Frontend (JS/HTML)" : HTTPS
+"Frontend (JS/HTML)" --> "Backend Application" : HTTPS
+"Backend Application" --> "PostgreSQL DB" : Read/Write
+"Backend Application" --> "Local File Storage" : Store/Retrieve ZIPs & Results
+"Backend Application" --> "ML Engine" : Invoke Analysis
+"ML Engine" --> LLM : API Call
+LLM --> "ML Engine" : Analysis Response
+"Backend Application" --> "Frontend (JS/HTML)" : JSON Response
+@enduml

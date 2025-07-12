@@ -1,0 +1,178 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+
+using namespace std;
+
+class Date {
+    public:
+        int day;
+        int month;
+        int year;
+        bool isYearLeap;
+
+        Date(int d, int m, int y) {
+            day = d;
+            month = m;
+            year = y;
+
+            if (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)) {
+                isYearLeap = true;
+
+            } else {
+                isYearLeap = false;
+            }
+        }
+
+        bool isValid() {
+            if (month > 12 || month < 1) {
+                return false;
+            }
+
+            if ((month == 4 || month == 6 || month == 9 || month == 11) && !(day >= 1 && day <= 30)) {
+                return false;
+            }
+
+            if ((month == 1 || month == 3 || month == 5 ||
+                 month == 7 || month == 8 || month == 10 || month == 12) &&
+                !(day >= 1 && day <= 31)) {
+                return false;
+            }
+
+            if (month == 2) {
+                /* Check if the year is leap and if it is, check the validity of the day */
+                if (isYearLeap && !(day >= 1 && day <= 29)) {
+                    return false;
+                }
+
+                /* Check if the year is not leap and if it is, check the validity of the day */
+                if (!isYearLeap && !(day >= 1 && day <= 28)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        int operator-(const Date& date) const {
+            int days_between = 0;
+
+            /* Calculating the days of full years if any */
+            for (int curr_year = date.year + 1; curr_year < year; curr_year++) {
+                days_between += 365;
+
+                if (curr_year % 400 == 0 || (curr_year % 4 == 0 && curr_year % 100 != 0)) {
+                    days_between += 1;
+                }
+            }
+
+            if (year == date.year) {
+                /* Calculating days of full months */
+                days_between += count_days_between_months(date.month, month, isYearLeap);
+
+                /* Considering parts of months at the edges */
+                days_between += day;
+                days_between -= date.day;
+
+            } else {
+                /* Considering parts of years at the edges */
+                days_between += count_days_from_the_year_start(day, month, isYearLeap);
+                days_between += count_days_till_the_year_end(date.day, date.month, date.isYearLeap);
+            }
+
+            return days_between;
+
+        }
+    
+    private:
+        static int count_days_between_months(int start_m, int end_m, bool isYearLeap) {
+            int days_count = 0;
+
+            for (int month = start_m; month < end_m; month++) {
+                if (month == 4 || month == 6 || month == 9 || month == 11) {
+                    days_count += 30;
+
+                } else if (month == 1 || month == 3 || month == 5 ||
+                           month == 7 || month == 8 || month == 10 || month == 12) {
+                    days_count += 31;
+
+                } else {
+                    if (isYearLeap) {
+                        days_count += 29;
+
+                    } else {
+                        days_count += 28;
+                    }
+                }
+            }
+
+            return days_count;
+        }
+
+        static int count_days_from_the_year_start(int d, int m, bool isYearLeap) {
+            int days_count = count_days_between_months(1, m, isYearLeap);
+
+            days_count += d;     // The days of the last month were not considered above
+
+            return days_count;
+        }
+
+        static int count_days_till_the_year_end(int d, int m, bool isYearLeap) {
+            int days_count = 0;
+
+            days_count += count_days_between_months(m, 13, isYearLeap);
+            days_count -= d;      // The first month is not full
+
+            return days_count;
+        }
+};
+
+bool cmp(const Date& date1, const Date& date2) {
+    if (date1.year < date2.year) {
+        return true;
+
+    } else if (date1.year > date2.year) {
+        return false;
+    }
+
+    if (date1.month < date2.month) {
+        return true;
+
+    } else if (date1.month > date2.month) {
+        return false;
+    }
+
+    if (date1.day < date2.day) {
+        return true;
+
+    } else if (date1.day > date2.day) {
+        return false;
+    }
+
+    return true;
+
+}
+
+int main() {
+    int d1, m1, y1, d2, m2, y2, d3, m3, y3;
+    cin >> d1 >> m1 >> y1 >> d2 >> m2 >> y2 >> d3 >> m3 >> y3;
+    
+    Date a(d1, m1, y1);
+    Date b(d2, m2, y2);
+    Date c(d3, m3, y3);
+
+    vector<Date> v = {a, b, c};
+    
+    if(!a.isValid() || !b.isValid() || !c.isValid()) {
+        cout << "Invalid Input" << endl; 
+        return 0;
+    }
+ 
+    // define your comparator function globally
+    sort(v.begin(), v.end(), cmp); 
+    
+    // overload the - operator for this to work
+    cout << v[2] - v[0] << endl;
+    return 0;
+}

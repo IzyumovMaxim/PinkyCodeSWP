@@ -1,0 +1,40 @@
+name: Backlog | Bug Report
+description: Report a bug to the Backlog column.
+title: "[BACKLOG][BUG] "
+labels: ["backlog","bug"]
+body:
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      options: [frontend, ML, backend]
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug Summary
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to Reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true

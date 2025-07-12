@@ -1,0 +1,103 @@
+-- Определение типа данных для двумерного вектора
+data Vector2D = Vector2D Double Double
+    deriving (Show, Eq)
+
+-- Сложение двух векторов
+addVectors :: Vector2D -> Vector2D -> Vector2D
+addVectors (Vector2D x1 y1) (Vector2D x2 y2) =
+    Vector2D (x1 + x2) (y1 + y2)
+    -- Складываем соответствующие координаты
+
+-- Вычитание двух векторов
+subtractVectors :: Vector2D -> Vector2D -> Vector2D
+subtractVectors (Vector2D x1 y1) (Vector2D x2 y2) =
+    Vector2D (x1 - x2) (y1 - y2)
+    -- Вычитаем соответствующие координаты
+
+-- Умножение вектора на скаляр
+scaleVector :: Double -> Vector2D -> Vector2D
+scaleVector scalar (Vector2D x y) =
+    Vector2D (scalar * x) (scalar * y)
+    -- Умножаем каждую координату на скаляр
+
+-- Вычисление длины вектора
+vectorLength :: Vector2D -> Double
+vectorLength (Vector2D x y) =
+    sqrt (x * x + y * y)
+    -- Используем формулу длины вектора: sqrt(x^2 + y^2)
+
+-- Нормализация вектора (приведение к единичной длине)
+normalizeVector :: Vector2D -> Vector2D
+normalizeVector v@(Vector2D x y) =
+    let len = vectorLength v
+    in if len == 0 then v else scaleVector (1 / len) v
+    -- Если длина равна нулю, возвращаем исходный вектор (защита от деления на ноль)
+
+-- Проверка, является ли вектор нулевым
+isZeroVector :: Vector2D -> Bool
+isZeroVector (Vector2D x y) =
+    x == 0 && y == 0
+    -- Вектор считается нулевым, если обе его координаты равны нулю
+
+-- Скалярное произведение двух векторов
+dotProduct :: Vector2D -> Vector2D -> Double
+dotProduct (Vector2D x1 y1) (Vector2D x2 y2) =
+    x1 * x2 + y1 * y2
+    -- Формула скалярного произведения: x1*x2 + y1*y2
+
+-- Угол между двумя векторами в радианах
+angleBetweenVectors :: Vector2D -> Vector2D -> Double
+angleBetweenVectors v1 v2 =
+    let dot = dotProduct v1 v2
+        len1 = vectorLength v1
+        len2 = vectorLength v2
+    in acos (dot / (len1 * len2))
+    -- Формула угла через скалярное произведение и длины векторов
+
+-- Поворот вектора на заданный угол (в радианах)
+rotateVector :: Double -> Vector2D -> Vector2D
+rotateVector angle (Vector2D x y) =
+    let cosA = cos angle
+        sinA = sin angle
+    in Vector2D (cosA * x - sinA * y) (sinA * x + cosA * y)
+    -- Используем матрицу поворота для вычисления новых координат
+
+-- Пример использования функций
+main :: IO ()
+main = do
+    -- Создаем два вектора
+    let v1 = Vector2D 3 4
+    let v2 = Vector2D 1 2
+
+    -- Выводим исходные векторы
+    putStrLn $ "Vector v1: " ++ show v1
+    putStrLn $ "Vector v2: " ++ show v2
+
+    -- Сложение векторов
+    let sumV = addVectors v1 v2
+    putStrLn $ "Sum of vectors: " ++ show sumV
+
+    -- Вычитание векторов
+    let diffV = subtractVectors v1 v2
+    putStrLn $ "Difference of vectors: " ++ show diffV
+
+    -- Умножение на скаляр
+    let scaledV = scaleVector 2 v1
+    putStrLn $ "Scaled vector: " ++ show scaledV
+
+    -- Длина вектора
+    putStrLn $ "Length of v1: " ++ show (vectorLength v1)
+
+    -- Нормализация вектора
+    let normV = normalizeVector v1
+    putStrLn $ "Normalized vector: " ++ show normV
+
+    -- Скалярное произведение
+    putStrLn $ "Dot product of v1 and v2: " ++ show (dotProduct v1 v2)
+
+    -- Угол между векторами
+    putStrLn $ "Angle between v1 and v2: " ++ show (angleBetweenVectors v1 v2)
+
+    -- Поворот вектора
+    let rotatedV = rotateVector (pi / 4) v1
+    putStrLn $ "Rotated vector by 45 degrees: " ++ show rotatedV
